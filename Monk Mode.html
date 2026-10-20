@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monk Mode</title>
+<style>
+:root{--bg:#0a0607;--panel:#150a0d;--line:#3a1620;--burg:#7a1830;--burg2:#a3233f;--text:#f1e4e6;--mute:#a58a90;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;line-height:1.4}
+main{max-width:560px;margin:0 auto;padding:22px 16px 48px}
+h1{font-size:2.3rem;margin:0;font-weight:700}
+.date{color:var(--mute);margin:2px 0 16px}
+.bar{height:8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--burg),var(--burg2));transition:width .4s}
+.count{color:var(--mute);font-size:.9rem;margin:6px 0 22px}
+ol{list-style:none;margin:0;padding:0}
+.s{position:relative;padding:0 0 18px 54px}
+.s::before{content:"";position:absolute;left:19px;top:38px;bottom:-2px;width:2px;background:var(--line)}
+.s:last-child::before{display:none}
+.s.done::before{background:var(--burg2)}
+.node{position:absolute;left:6px;top:4px;width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:var(--bg);display:grid;place-items:center;font-size:.8rem;color:var(--mute)}
+.s.done .node{background:var(--burg2);border-color:var(--burg2);color:#fff}
+.s.cur .node{border-color:var(--burg2);box-shadow:0 0 0 5px rgba(163,35,63,.25);color:var(--text)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-top:4px}
+.t{font-size:1.05rem}
+.w{color:var(--mute);font-size:.85rem;white-space:nowrap}
+.s.todo{opacity:.5}
+.s.done .t{color:var(--mute);text-decoration:line-through}
+.s.done{cursor:pointer}
+.card{margin-top:10px;padding:18px;border-radius:14px;border:1px solid var(--burg2);background:linear-gradient(160deg,#2a0d16,#12080b)}
+.card p{margin:0 0 14px;color:var(--mute)}
+.card .t{font-size:1.4rem}
+.btn{display:block;width:100%;padding:14px;margin-top:8px;border:0;border-radius:10px;background:var(--burg2);color:#fff;font:inherit;font-size:1.05rem;cursor:pointer}
+.btn.alt{background:transparent;border:1px solid var(--burg2);color:var(--text)}
+.btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.clock{font-size:2rem;margin:0 0 6px;font-variant-numeric:tabular-nums}
+.end{padding:18px;border:1px solid var(--burg2);border-radius:14px;margin-bottom:18px;text-align:center;background:linear-gradient(160deg,#2a0d16,#12080b)}
+.end b{font-size:1.3rem}
+.reset{margin-top:6px;background:none;border:1px solid var(--line);color:var(--mute);font:inherit;padding:10px 14px;border-radius:10px;cursor:pointer}
+.rules{margin-top:34px;padding:18px;border:1px solid var(--burg2);border-radius:12px;background:linear-gradient(180deg,#1d0a10,var(--panel))}
+.rules h2{margin:0 0 4px;font-size:1.25rem}
+.rules p{margin:0 0 14px;color:var(--mute);font-size:.9rem}
+.rules h3{margin:12px 0 6px;font-size:1rem;color:var(--burg2)}
+.rules ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rules li{padding:9px 12px;border-left:3px solid var(--burg2);background:#0f0709;border-radius:4px}
+</style>
+</head>
+<body>
+<main>
+<h1>Monk mode</h1>
+<div class="date" id="date"></div>
+<div class="bar"><i id="fill"></i></div>
+<div class="count" id="count"></div>
+<div id="end"></div>
+<ol id="list"></ol>
+<button class="reset" id="reset">Start the day over</button>
+
+<section class="rules">
+<h2>Never skip these</h2>
+<p>Core and additional variables stay on every day. Do not break them.</p>
+<h3>Core</h3>
+<ul>
+<li>No alcohol</li>
+<li>Daily workout</li>
+<li>10 min meditation</li>
+</ul>
+<h3>Additional variables</h3>
+<ul>
+<li>Stick to your diet</li>
+<li>Pray every day</li>
+<li>Journal about your day</li>
+<li>Red light therapy for 15 mins</li>
+</ul>
+</section>
+</main>
+<script>
+var S=[
+{t:"Work block 1",w:"90 min",m:90,d:"Deep focus. One task, nothing else."},
+{t:"Break",w:"15 min",m:15,d:"Step away from the desk. Stretch, water."},
+{t:"Work block 2",w:"90 min",m:90,d:"Another 90 minutes, same focus."},
+{t:"Lunch + pray",w:"",d:"Eat well, stick to your diet, then pray."},
+{t:"Back to work",w:"1:30",d:"Pick the work back up."},
+{t:"Gym",w:"3 to 5",m:120,d:"Two hours. This is your daily workout."},
+{t:"Come home, pray + eat",w:"",d:"Pray first, then eat."},
+{t:"Evening plan",w:"",c:["Socialize","Stay home and work"],d:"Pick how you spend the evening."},
+{t:"Dinner with the family",w:"At 9",d:"Phone away. Be there."},
+{t:"Pray",w:"",d:"Close the day."},
+{t:"Meditate",w:"10 min",m:10,d:"Ten quiet minutes."},
+{t:"Journal",w:"",d:"Write about your day."},
+{t:"Red light therapy",w:"15 min",m:15,d:"Last one. Then the day is done."}
+];
+var st={done:{},pick:""},today=new Date().toISOString().slice(0,10),tm=null,iv=null;
+document.getElementById("date").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
+try{var x=localStorage.getItem("monk2:"+today);if(x)st=JSON.parse(x)}catch(e){}
+function save(){try{localStorage.setItem("monk2:"+today,JSON.stringify(st))}catch(e){}}
+function stop(){if(iv)clearInterval(iv);iv=null;tm=null}
+function fin(i,pick){st.done[i]=true;if(pick)st.pick=pick;stop();save();render()}
+function fmt(s){var m=Math.floor(s/60),r=s%60;return m+":"+(r<10?"0":"")+r}
+function tick(){var el=document.getElementById("clk");if(!el||!tm)return;var s=Math.round((tm-Date.now())/1000);el.textContent=s>0?fmt(s):"Time\u2019s up"}
+function render(){
+var cur=-1;for(var i=0;i<S.length;i++){if(!st.done[i]){cur=i;break}}
+var n=cur<0?S.length:cur,list=document.getElementById("list");list.innerHTML="";
+S.forEach(function(s,i){
+var li=document.createElement("li"),k=i<n||st.done[i]?"done":i===cur?"cur":"todo";
+li.className="s "+k;
+var title=s.t;if(s.c&&st.done[i]&&st.pick)title=st.pick;
+li.innerHTML='<div class="node">'+(k==="done"?"\u2713":i+1)+'</div><div class="row"><span class="t"></span><span class="w"></span></div>';
+li.querySelector(".t").textContent=title;li.querySelector(".w").textContent=s.w;
+if(k==="done"){li.onclick=function(){for(var j=i;j<S.length;j++)delete st.done[j];stop();save();render()}}
+if(k==="cur"){
+var c=document.createElement("div");c.className="card";
+var h='<p>'+s.d+'</p>';
+if(s.m)h+='<div class="clock" id="clk">'+fmt(s.m*60)+'</div><button class="btn alt" id="go">Start timer</button>';
+if(s.c){s.c.forEach(function(o,q){h+='<button class="btn'+(q?" alt":"")+'" data-p="'+o+'">'+o+'</button>'})}
+else{var nx=S[i+1];h+='<button class="btn" id="ok">'+(nx?"Done. Next: "+nx.t:"Done. Finish the day")+'</button>'}
+c.innerHTML=h;li.appendChild(c);
+setTimeout(function(){
+var ok=c.querySelector("#ok");if(ok)ok.onclick=function(){fin(i)};
+c.querySelectorAll("[data-p]").forEach(function(b){b.onclick=function(){fin(i,b.dataset.p)}});
+var go=c.querySelector("#go");if(go)go.onclick=function(){stop();tm=Date.now()+s.m*60000;iv=setInterval(tick,500);tick();go.textContent="Restart timer"}},0)}
+list.appendChild(li)});
+document.getElementById("fill").style.width=(n/S.length*100)+"%";
+document.getElementById("count").textContent=cur<0?"All "+S.length+" steps done":"Step "+(cur+1)+" of "+S.length;
+document.getElementById("end").innerHTML=cur<0?'<div class="end"><b>Day complete.</b><p>Now check the reminders below: did you hold every core and additional variable?</p></div>':"";
+if(cur>=0&&cur<S.length){var cs=document.querySelector(".s.cur");if(cs&&n>0)cs.scrollIntoView({block:"center",behavior:"smooth"})}}
+document.getElementById("reset").onclick=function(){st={done:{},pick:""};stop();save();render()};
+render();
+</script>
+</body>
+</html>
